@@ -136,7 +136,7 @@
            CONTENEDORES DE FORMULARIO
            ============================================ */
         .bordeApp {
-            border: 1px solid #dee2e6;
+            border: 1px solid #e5e5e5;
             border-radius: 3px;
             padding: 20px;
             background-color: #fff;
@@ -149,40 +149,66 @@
             font-family: Roboto, "Helvetica Neue", "Segoe UI", sans-serif;
             font-size: 11px;
             font-weight: 500;
-            color: #333;
-            margin-bottom: 3px;
+            color: #555;
+            margin-bottom: 5px;
             text-transform: uppercase;
         }
 
-        /* Campos deshabilitados (suscriptor) - borde gris */
-        .form-control-disabled, .form-select-disabled {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 6px 12px;
-            font-size: 14px;
-            margin-bottom: 0;
-            background-color: #fff;
-            color: #333;
+        /* Campos del suscriptor (deshabilitados) - texto gris */
+        .input-suscriptor {
             width: 100%;
             height: 34px;
-        }
-
-        .form-control-disabled:disabled, .form-select-disabled:disabled {
+            padding: 6px 12px;
+            font-size: 14px;
+            color: #888;
             background-color: #fff;
-            color: #333;
-            opacity: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
 
-        /* Campos editables (pago) - borde verde */
+        .input-suscriptor:disabled {
+            background-color: #fff;
+            color: #888;
+            opacity: 1;
+            -webkit-text-fill-color: #888;
+        }
+
+        /* Select del suscriptor con flecha sutil */
+        .select-suscriptor {
+            width: 100%;
+            height: 34px;
+            padding: 6px 12px;
+            font-size: 14px;
+            color: #888;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 10px;
+        }
+
+        .select-suscriptor:disabled {
+            background-color: #fff;
+            color: #888;
+            opacity: 1;
+            -webkit-text-fill-color: #888;
+        }
+
+        /* Campos editables (pago) - borde verde FINO */
         .form-control-editable, .form-select-editable {
-            border: 2px solid #28a745;
+            border: 1px solid #28a745;
             border-radius: 4px;
             padding: 6px 12px;
             font-size: 14px;
             margin-bottom: 0;
             background-color: #fff;
             width: 100%;
-            height: 38px;
+            height: 34px;
         }
 
         .form-control-editable:focus, .form-select-editable:focus {
@@ -228,33 +254,32 @@
         }
 
         /* ============================================
-           PAGO TOTAL - BULLET AZUL (ORIGINAL)
+           OPCIONES DE PAGO - RADIO BUTTONS
            ============================================ */
-        .pago-total-container {
+        .opciones-pago {
             display: flex;
             align-items: center;
-            padding: 10px 0;
-            margin-left: 20px;
+            gap: 30px;
+            padding: 15px 0;
         }
 
-        .pago-total-container::before {
-            content: '';
-            width: 12px;
-            height: 12px;
-            background-color: #337ab7;
-            border-radius: 50%;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-
-        .pago-total-text {
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
             font-size: 14px;
             color: #333;
-            font-weight: 500;
         }
 
-        .pago-total-valor {
-            font-weight: bold;
+        .radio-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #337ab7;
+        }
+
+        .radio-option strong {
+            color: #333;
             margin-left: 5px;
         }
 
@@ -513,13 +538,13 @@
                 </div>
             </div>
 
-            <!-- Formulario Datos Suscriptor (Solo lectura) - Bordes grises -->
+            <!-- Formulario Datos Suscriptor (Solo lectura) -->
             <div class="container-fluid mt-3 mb-3">
                 <div class="bordeApp">
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
+                    <div class="row" style="margin-bottom: 10px;">
+                        <div class="col-md-6">
                             <label class="form-label">TIPO DE DOCUMENTO</label>
-                            <select class="form-select-disabled" id="tipoDocumento" disabled>
+                            <select class="select-suscriptor" id="tipoDocumento" disabled>
                                 <option value="">Seleccione...</option>
                                 <option value="CC" selected>CEDULA CIUDADANIA</option>
                                 <option value="CE">CEDULA EXTRANJERIA</option>
@@ -527,25 +552,25 @@
                                 <option value="NT">NIT</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-2">
+                        <div class="col-md-6">
                             <label class="form-label">NUMERO DE DOCUMENTO</label>
-                            <input type="text" class="form-control-disabled" id="numeroDocumento" value="SIN DATO" disabled>
+                            <input type="text" class="input-suscriptor" id="numeroDocumento" value="SIN DATO" disabled>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-12 mb-2">
+                    <div class="row" style="margin-bottom: 10px;">
+                        <div class="col-12">
                             <label class="form-label">NOMBRES</label>
-                            <input type="text" class="form-control-disabled" id="nombres" disabled>
+                            <input type="text" class="input-suscriptor" id="nombres" disabled>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
+                    <div class="row" style="margin-bottom: 10px;">
+                        <div class="col-md-6">
                             <label class="form-label">TELEFONO MOVIL PARA NOTIFICACIONES</label>
-                            <input type="text" class="form-control-disabled" id="telefono" disabled>
+                            <input type="text" class="input-suscriptor" id="telefono" disabled>
                         </div>
-                        <div class="col-md-6 mb-2">
+                        <div class="col-md-6">
                             <label class="form-label">CORREO ELECTRONICO</label>
-                            <input type="email" class="form-control-disabled" id="correo" disabled>
+                            <input type="email" class="input-suscriptor" id="correo" disabled>
                         </div>
                     </div>
 
@@ -597,9 +622,16 @@
                         </div>
                     </div>
 
-                    <!-- Pago Total con bullet azul - EXACTO AL ORIGINAL -->
-                    <div class="pago-total-container">
-                        <span class="pago-total-text">Pago Total:<span class="pago-total-valor" id="pagoTotalBullet">$ 0,00</span></span>
+                    <!-- Opciones de Pago -->
+                    <div class="opciones-pago">
+                        <label class="radio-option">
+                            <input type="radio" name="tipoPago" value="total" checked>
+                            <span>Pago Total: <strong id="pagoTotalBullet">$ 0,00</strong></span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="tipoPago" value="mes">
+                            <span>Pago Servicio del Mes: <strong id="pagoMesBullet">$ 0,00</strong></span>
+                        </label>
                     </div>
 
                     <!-- Botones de Accion -->
@@ -733,8 +765,9 @@
             document.getElementById('valor').textContent = formatCurrencyOriginal(factura.valorFactura);
             document.getElementById('valorMes').textContent = formatCurrencyOriginal(factura.desglose?.totalMes || factura.valorFactura);
 
-            // Pago Total con formato colombiano ($ 9.787,00)
-            document.getElementById('pagoTotalBullet').textContent = ' $ ' + formatNumberColombian(factura.valorFactura);
+            // Opciones de pago con formato colombiano ($ 9.787,00)
+            document.getElementById('pagoTotalBullet').textContent = '$ ' + formatNumberColombian(factura.valorFactura);
+            document.getElementById('pagoMesBullet').textContent = '$ ' + formatNumberColombian(factura.desglose?.totalMes || factura.valorFactura);
 
             // Datos del suscriptor - usar datos de la API
             document.getElementById('nombres').value = factura.nombreCliente || '';
