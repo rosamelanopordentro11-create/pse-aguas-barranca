@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSE Aguas Barranca - Pago de Factura</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/logo-aguas.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* ============================================
+           ESTILOS BASE - IDENTICOS AL ORIGINAL
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 14px;
+            font-family: Roboto, "Helvetica Neue", sans-serif;
+            position: relative;
+            min-height: 100%;
+        }
+
+        @media (min-width: 768px) {
+            html {
+                font-size: 16px;
+            }
+        }
+
+        body {
+            font-family: Roboto, "Helvetica Neue", "Segoe UI", sans-serif;
+            background-color: #ffffff;
+            min-height: 100vh;
+            margin-bottom: 60px;
+        }
+
+        /* ============================================
+           HEADER/NAVBAR
+           ============================================ */
+        .navbar {
+            padding: 0 !important;
+            background-color: #ffffff !important;
+            margin-bottom: 16px;
+        }
+
+        .logoAguas {
+            max-width: 200px;
+        }
+
+        .imgCabecera {
+            max-width: 100%;
+        }
+
+        /* ============================================
+           HEADER ROW - TITULO E INFO
+           ============================================ */
+        .headerRow {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: Roboto, "Helvetica Neue", "Segoe UI", sans-serif;
+            font-size: 19px;
+            color: #004F80;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .colInfo {
+            display: flex;
+            flex-direction: row;
+            justify-content: end;
+            padding-right: 0;
+        }
+
+        /* Panel Info */
+        .panel-info {
+            background-color: #e8f2dc;
+            border: 2px solid #b5d6a3;
+            border-radius: 10px;
+            padding: 8px 12px;
+            min-width: 210px;
+            max-width: 220px;
+        }
+
+        .panel-info .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+
+        .panel-info .info-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #5c7a4c;
+            text-align: right;
+            flex: 1;
+        }
+
+        .panel-info .info-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #3a5230;
+            text-align: right;
+            width: 85px;
+            flex-shrink: 0;
+        }
+
+        @media screen and (max-width: 768px) {
+            .panel-info {
+                margin: 0 auto;
+            }
+        }
+
+        /* ============================================
+           CONTENEDORES DE FORMULARIO
+           ============================================ */
+        .bordeApp {
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* ============================================
+           FORMULARIOS - ESTILOS ORIGINALES
+           ============================================ */
+        .form-label {
+            font-family: Roboto, "Helvetica Neue", "Segoe UI", sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Campos deshabilitados (suscriptor) - borde gris */
+        .form-control-disabled, .form-select-disabled {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            margin-bottom: 0;
+            background-color: #fff;
+            color: #333;
+            width: 100%;
+            height: 34px;
+        }
+
+        .form-control-disabled:disabled, .form-select-disabled:disabled {
+            background-color: #fff;
+            color: #333;
+            opacity: 1;
+        }
+
+        /* Campos editables (pago) - borde verde */
+        .form-control-editable, .form-select-editable {
+            border: 2px solid #28a745;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            margin-bottom: 0;
+            background-color: #fff;
+            width: 100%;
+            height: 38px;
+        }
+
+        .form-control-editable:focus, .form-select-editable:focus {
+            border-color: #218838;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.15);
+            outline: none;
+        }
+
+        .form-control-editable::placeholder {
+            color: #999;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        .campo-obligatorio {
+            font-size: 10px;
+            color: #8abc02;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* ============================================
+           CHECKBOX
+           ============================================ */
+        .form-check-input {
+            border: 1px solid #ced4da;
+            width: 18px;
+            height: 18px;
+        }
+
+        .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .form-check-label {
+            font-size: 13px;
+            font-weight: 500;
+            margin-left: 5px;
+            color: #333;
+        }
+
+        /* ============================================
+           PAGO TOTAL - BULLET AZUL (ORIGINAL)
+           ============================================ */
+        .pago-total-container {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            margin-left: 20px;
+        }
+
+        .pago-total-container::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background-color: #337ab7;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .pago-total-text {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .pago-total-valor {
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        /* ============================================
+           BOTONES - ESTILO ORIGINAL
+           ============================================ */
+        .botones-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-accion {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+        }
+
+        .btn-pagar {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .btn-pagar:hover {
+            background-color: #449d44;
+            color: white;
+        }
+
+        .btn-salir {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .btn-salir:hover {
+            background-color: #c9302c;
+            color: white;
+        }
+
+        /* ============================================
+           TABLA DE FACTURA
+           ============================================ */
+        .tabla-factura {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .tabla-factura th {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #333;
+            text-align: center;
+        }
+
+        .tabla-factura td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .valor-moneda {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .badge-pendiente {
+            background-color: #ffc107;
+            color: #000;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* ============================================
+           DETALLES FACTURA
+           ============================================ */
+        .detalle-section {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .detalle-section h5 {
+            color: #004F80;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 5px;
+        }
+
+        .detalle-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed #dee2e6;
+        }
+
+        .detalle-row:last-child {
+            border-bottom: none;
+        }
+
+        .detalle-label {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .detalle-value {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .footer-site {
+            border-top: 1px solid #dee2e6;
+            padding: 15px 0;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .footer-site a {
+            color: #0077cc;
+            text-decoration: none;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media screen and (max-width: 768px) {
+            .infoDiv {
+                margin: 10px auto;
+                min-width: 100%;
+            }
+
+            h1 {
+                margin: 15px 0;
+                text-align: center;
+                font-size: 16px;
+            }
+
+            .colInfo {
+                justify-content: center;
+            }
+
+            .botones-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-accion {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .imgCabecera {
+                display: none;
+            }
+
+            .navbar .container {
+                justify-content: center;
+            }
+        }
+
+        /* Loading */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3">Cargando datos de la factura...</p>
+    </div>
+
+    <!-- Header -->
+    <nav class="navbar navbar-expand-sm navbar-light bg-white mb-3">
+        <div class="container d-flex justify-content-center align-items-center">
+            <img src="images/logo-aguas.png" alt="Aguas de Barrancabermeja" class="logoAguas">
+            <div class="gota d-sm-inline-flex justify-content-between">
+                <img src="images/img_cabecera.png" alt="" class="imgCabecera">
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <main role="main" class="pb-3">
+            <!-- Header Row: Titulo + Info Panel -->
+            <div class="row d-flex justify-content-center align-items-center">
+                <div class="row headerRow">
+                    <div class="col-xl-7 col-md-6 col-sm-12 text-center d-flex justify-content-center align-items-center">
+                        <h1>PAGO DE FACTURA DE SERVICIOS DE ACUEDUCTO Y ALCANTARILLADO</h1>
+                    </div>
+                    <div class="col-xl-5 col-md-6 col-sm-12 colInfo">
+                        <!-- Panel Info -->
+                        <div class="panel-info">
+                            <div class="info-row">
+                                <span class="info-label">N° FACTURA:</span>
+                                <span class="info-value" id="numeroFac">0</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">CODIGO USUARIO:</span>
+                                <span class="info-value" id="suscriptor">0</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">VALOR:</span>
+                                <span class="info-value" id="valor">$0</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">VALOR MES:</span>
+                                <span class="info-value" id="valorMes">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario Datos Suscriptor (Solo lectura) - Bordes grises -->
+            <div class="container-fluid mt-3 mb-3">
+                <div class="bordeApp">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">TIPO DE DOCUMENTO</label>
+                            <select class="form-select-disabled" id="tipoDocumento" disabled>
+                                <option value="">Seleccione...</option>
+                                <option value="CC" selected>CEDULA CIUDADANIA</option>
+                                <option value="CE">CEDULA EXTRANJERIA</option>
+                                <option value="TI">TARJETA IDENTIDAD</option>
+                                <option value="NT">NIT</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">NUMERO DE DOCUMENTO</label>
+                            <input type="text" class="form-control-disabled" id="numeroDocumento" value="SIN DATO" disabled>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <label class="form-label">NOMBRES</label>
+                            <input type="text" class="form-control-disabled" id="nombres" disabled>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">TELEFONO MOVIL PARA NOTIFICACIONES</label>
+                            <input type="text" class="form-control-disabled" id="telefono" disabled>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">CORREO ELECTRONICO</label>
+                            <input type="email" class="form-control-disabled" id="correo" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Checkbox -->
+                    <div class="text-center mt-3">
+                        <div class="form-check d-inline-flex align-items-center">
+                            <input class="form-check-input" type="checkbox" id="checkDatosIguales">
+                            <label class="form-check-label" for="checkDatosIguales">
+                                LOS DATOS DEL SUSCRIPTOR SON IGUALES A LOS DEL PAGO
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario Datos de Pago (Editable) - Bordes verdes -->
+            <div class="container-fluid mt-3 mb-3">
+                <div class="bordeApp">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <select class="form-select-editable" id="tipoDocPago" required>
+                                <option value="">Seleccione...</option>
+                                <option value="CC">CEDULA CIUDADANIA</option>
+                                <option value="CE">CEDULA EXTRANJERIA</option>
+                                <option value="TI">TARJETA IDENTIDAD</option>
+                                <option value="NT">NIT</option>
+                            </select>
+                            <span class="campo-obligatorio">CAMPO OBLIGATORIO</span>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control-editable" id="numDocPago" placeholder="NUMERO DE DOCUMENTO" maxlength="15" required>
+                            <span class="campo-obligatorio">CAMPO OBLIGATORIO</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <input type="text" class="form-control-editable" id="nombresPago" placeholder="NOMBRES" required>
+                            <span class="campo-obligatorio">CAMPO OBLIGATORIO</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control-editable" id="telefonoPago" placeholder="TELEFONO MOVIL PARA NOTIFICACIONES" maxlength="10" required>
+                            <span class="campo-obligatorio">CAMPO OBLIGATORIO</span>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="email" class="form-control-editable" id="correoPago" placeholder="CORREO ELECTRONICO" required>
+                            <span class="campo-obligatorio">CAMPO OBLIGATORIO</span>
+                        </div>
+                    </div>
+
+                    <!-- Pago Total con bullet azul - EXACTO AL ORIGINAL -->
+                    <div class="pago-total-container">
+                        <span class="pago-total-text">Pago Total:<span class="pago-total-valor" id="pagoTotalBullet">$ 0,00</span></span>
+                    </div>
+
+                    <!-- Botones de Accion -->
+                    <div class="botones-container">
+                        <button type="button" class="btn-accion btn-pagar" id="btnPagar">
+                            <i class="fas fa-money-bill"></i> PAGAR
+                        </button>
+                        <button type="button" class="btn-accion btn-pagar" id="btnAbonar">
+                            <i class="fas fa-money-bill"></i> ABONAR
+                        </button>
+                        <button type="button" class="btn-accion btn-pagar" id="btnImprimir">
+                            <i class="fas fa-download"></i> IMPRIMIR FACTURA
+                        </button>
+                        <button type="button" class="btn-accion btn-salir" id="btnSalir">
+                            <i class="fas fa-times"></i> SALIR
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-site">
+        <div class="container text-center">
+            <span>Desarrollado por: </span>
+            <a href="https://microshif.com.co/" target="_blank">Microshif Smart Systems</a>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        let facturaData = null;
+
+        // ============================================
+        // INICIALIZACION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Obtener codigo de usuario de URL o sessionStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const codigoUsuario = urlParams.get('codigo') || sessionStorage.getItem('codigoUsuario');
+
+            if (codigoUsuario) {
+                cargarFactura(codigoUsuario);
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atencion',
+                    text: 'No se especifico un codigo de usuario',
+                    confirmButtonColor: '#337ab7'
+                }).then(() => {
+                    window.location.href = '/';
+                });
+            }
+
+            // Event Listeners
+            document.getElementById('checkDatosIguales').addEventListener('change', copiarDatos);
+            document.getElementById('btnPagar').addEventListener('click', pagar);
+            document.getElementById('btnAbonar').addEventListener('click', abonar);
+            document.getElementById('btnImprimir').addEventListener('click', imprimir);
+            document.getElementById('btnSalir').addEventListener('click', salir);
+
+            // Solo numeros en campos de telefono y documento
+            ['numDocPago', 'telefonoPago'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            });
+        });
+
+        // ============================================
+        // CARGAR DATOS DE FACTURA
+        // ============================================
+        async function cargarFactura(codigo) {
+            console.log('=== CARGANDO FACTURA ===');
+            console.log('Codigo:', codigo);
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const response = await fetch('/api/consultar-factura', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigoUsuario: codigo })
+                });
+
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+
+                if (data.success && data.data) {
+                    facturaData = data.data;
+                    mostrarDatosFactura(facturaData);
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Atencion',
+                        text: data.message || 'No se encontro la factura',
+                        confirmButtonColor: '#337ab7'
+                    }).then(() => {
+                        window.location.href = '/';
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al cargar los datos de la factura',
+                    confirmButtonColor: '#337ab7'
+                });
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
+
+        // ============================================
+        // MOSTRAR DATOS EN LA PAGINA
+        // ============================================
+        function mostrarDatosFactura(factura) {
+            // Panel de informacion - formato $9787.00
+            document.getElementById('numeroFac').textContent = factura.numeroFactura;
+            document.getElementById('suscriptor').textContent = factura.codigoUsuario;
+            document.getElementById('valor').textContent = formatCurrencyOriginal(factura.valorFactura);
+            document.getElementById('valorMes').textContent = formatCurrencyOriginal(factura.desglose?.totalMes || factura.valorFactura);
+
+            // Pago Total con formato colombiano ($ 9.787,00)
+            document.getElementById('pagoTotalBullet').textContent = ' $ ' + formatNumberColombian(factura.valorFactura);
+
+            // Datos del suscriptor - usar datos de la API
+            document.getElementById('nombres').value = factura.nombreCliente || '';
+            document.getElementById('tipoDocumento').value = factura.tipoDocumento || 'CC';
+            document.getElementById('numeroDocumento').value = factura.cedula || '';
+            document.getElementById('telefono').value = factura.telefono || '';
+            document.getElementById('correo').value = factura.correo || '';
+
+        }
+
+        // ============================================
+        // FUNCIONES DE BOTONES
+        // ============================================
+        function copiarDatos() {
+            const checked = document.getElementById('checkDatosIguales').checked;
+            if (checked) {
+                // Copiar datos del suscriptor a datos de pago
+                document.getElementById('tipoDocPago').value = document.getElementById('tipoDocumento').value;
+                document.getElementById('numDocPago').value = document.getElementById('numeroDocumento').value !== 'SIN DATO' ? document.getElementById('numeroDocumento').value : '';
+                document.getElementById('nombresPago').value = document.getElementById('nombres').value;
+                document.getElementById('telefonoPago').value = document.getElementById('telefono').value;
+                document.getElementById('correoPago').value = document.getElementById('correo').value;
+            }
+        }
+
+        function validarFormulario() {
+            const campos = ['tipoDocPago', 'numDocPago', 'nombresPago', 'telefonoPago', 'correoPago'];
+            let valido = true;
+
+            campos.forEach(id => {
+                const campo = document.getElementById(id);
+                if (!campo.value.trim()) {
+                    campo.style.borderColor = '#dc3545';
+                    valido = false;
+                } else {
+                    campo.style.borderColor = '#28a745';
+                }
+            });
+
+            if (!valido) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atencion',
+                    text: 'Por favor complete todos los campos obligatorios',
+                    confirmButtonColor: '#337ab7'
+                });
+            }
+
+            return valido;
+        }
+
+        async function pagar() {
+            if (!validarFormulario()) return;
+
+            // Guardar datos del usuario para futuras consultas
+            try {
+                await fetch('/api/usuario', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        codigoUsuario: facturaData.codigoUsuario,
+                        tipoDocumento: document.getElementById('tipoDocPago').value,
+                        numeroDocumento: document.getElementById('numDocPago').value,
+                        nombre: document.getElementById('nombresPago').value,
+                        telefono: document.getElementById('telefonoPago').value,
+                        correo: document.getElementById('correoPago').value
+                    })
+                });
+                console.log('Datos de usuario guardados');
+            } catch (e) {
+                console.error('Error guardando datos:', e);
+            }
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Redirigiendo a PSE',
+                html: `
+                    <p>Sera redirigido al portal de pagos</p>
+                    <p><strong>Valor a pagar:</strong> ${formatCurrencyOriginal(facturaData.valorFactura)}</p>
+                `,
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            }).then(() => {
+                // Redirigir al portal PSE real
+                window.location.href = 'https://ws.suiteneptuno.com/BarrancaAguasWeb/FormPages/FormFactura';
+            });
+        }
+
+        function abonar() {
+            Swal.fire({
+                title: 'Abonar a Factura',
+                html: `
+                    <p><strong>Valor Original:</strong> ${formatCurrencyOriginal(facturaData.valorFactura)}</p>
+                    <input type="number" id="valorAbono" class="swal2-input" placeholder="Valor a abonar" min="1000" max="${facturaData.valorFactura}">
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Abonar',
+                confirmButtonColor: '#28a745',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const valor = document.getElementById('valorAbono').value;
+                    if (!valor || valor < 1000) {
+                        Swal.showValidationMessage('El valor minimo de abono es $1,000');
+                        return false;
+                    }
+                    if (valor > facturaData.valorFactura) {
+                        Swal.showValidationMessage('El valor no puede ser mayor al total');
+                        return false;
+                    }
+                    return valor;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Abono Registrado',
+                        text: `Se abonara ${formatCurrencyOriginal(result.value)} a su factura`,
+                        confirmButtonColor: '#337ab7'
+                    });
+                }
+            });
+        }
+
+        function imprimir() {
+            Swal.fire({
+                title: 'Descargando Factura',
+                text: 'Generando PDF de la factura...',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            }).then(() => {
+                window.print();
+            });
+        }
+
+        function salir() {
+            Swal.fire({
+                title: 'Salir',
+                text: 'Desea volver al inicio?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Si, salir',
+                confirmButtonColor: '#dc3545',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sessionStorage.removeItem('codigoUsuario');
+                    window.location.href = '/';
+                }
+            });
+        }
+
+        // ============================================
+        // UTILIDADES - FORMATO ORIGINAL
+        // ============================================
+        
+        // Formato original: $9787.00
+        function formatCurrencyOriginal(valor) {
+            if (typeof valor !== 'number') {
+                valor = parseFloat(valor) || 0;
+            }
+            return '$' + valor.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '');
+        }
+
+        // Formato colombiano para el bullet: 9.787,00
+        function formatNumberColombian(valor) {
+            if (typeof valor !== 'number') {
+                valor = parseFloat(valor) || 0;
+            }
+            return valor.toLocaleString('es-CO', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Formato de fecha corto: "3 de ene de 2026"
+        function formatDateShort(fecha) {
+            if (!fecha) return '-';
+            try {
+                const date = new Date(fecha);
+                return date.toLocaleDateString('es-CO', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return fecha;
+            }
+        }
+    </script>
+</body>
+</html>

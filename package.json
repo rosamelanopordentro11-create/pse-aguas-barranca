@@ -1,0 +1,28 @@
+{
+  "name": "pse-aguas-barranca",
+  "version": "1.0.0",
+  "description": "PSE Aguas de Barrancabermeja - Sistema de consulta y pago de facturas de agua",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "npx http-server -p 8080 -o"
+  },
+  "keywords": [
+    "pse",
+    "aguas",
+    "barrancabermeja",
+    "facturas",
+    "pagos",
+    "agua"
+  ],
+  "author": "Microshif Smart Systems",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

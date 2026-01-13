@@ -1,0 +1,420 @@
+/**
+ * PSE Aguas de Barrancabermeja - Estilos principales
+ * Sistema de consulta y pago de facturas
+ *
+ * Colores principales:
+ * - Titulo formulario: #004f80 (rgb(0, 79, 128))
+ * - Borde input verde: #28a745 (rgb(40, 167, 69))
+ * - Mensaje validacion: #8abc02 (rgb(138, 188, 2))
+ * - Boton consultar: #337ab7 (rgb(51, 122, 183))
+ * - Borde contenedor: #ced4da (rgb(206, 212, 218))
+ * - Footer texto: #6c757d (rgb(108, 117, 125))
+ * - Footer link: #0077cc (rgb(0, 119, 204))
+ */
+
+/* ============================================
+   RESET Y ESTILOS BASE
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    background-color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: #333333;
+    line-height: 1.5;
+}
+
+/* ============================================
+   HEADER/NAVBAR
+   ============================================ */
+.navbar {
+    padding: 0;
+    background-color: #ffffff !important;
+    margin-bottom: 16px;
+    min-height: 159px;
+}
+
+.navbar .container {
+    position: relative;
+    padding: 10px 15px;
+    min-height: 159px;
+}
+
+/* Logo Aguas de Barrancabermeja */
+.logo-aguas {
+    max-width: 200px;
+    height: auto;
+    z-index: 2;
+    position: relative;
+}
+
+/* Imagen decorativa cabecera (gota de agua) */
+.img-cabecera {
+    position: absolute;
+    right: 0;
+    top: 0;
+    max-height: 159px;
+    width: auto;
+    max-width: 899px;
+    z-index: 1;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+main {
+    flex: 1;
+    padding-bottom: 20px;
+}
+
+/* ============================================
+   CONTENEDOR DEL FORMULARIO
+   ============================================ */
+.contenedor-formulario {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 16px auto;
+    background-color: #ffffff;
+    max-width: 864px;
+    width: 100%;
+}
+
+/* ============================================
+   TITULO DEL FORMULARIO
+   ============================================ */
+.titulo-formulario {
+    color: #004f80;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+/* ============================================
+   FORMULARIO
+   ============================================ */
+.formulario-consulta {
+    width: 100%;
+}
+
+/* ============================================
+   CAMPO DE INPUT
+   ============================================ */
+.campo-input {
+    margin-bottom: 10px;
+}
+
+.input-codigo {
+    width: 100%;
+    height: 34px;
+    padding: 7px 9px 8px;
+    font-size: 14px;
+    border: 2px solid #28a745;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: #ffffff;
+}
+
+.input-codigo:focus {
+    border-color: #218838;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
+}
+
+.input-codigo::placeholder {
+    color: #6c757d;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+/* Estado de error del input */
+.input-codigo.input-error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+/* ============================================
+   MENSAJE DE AYUDA/VALIDACION
+   ============================================ */
+.mensaje-ayuda {
+    display: block;
+    color: #8abc02;
+    font-size: 10.5px;
+    margin-top: 5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Mensaje de error (cuando hay error real) */
+.mensaje-error {
+    display: none;
+    color: #dc3545;
+    font-size: 10.5px;
+    margin-top: 5px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.mensaje-error.visible {
+    display: block;
+}
+
+/* ============================================
+   BOTON CONSULTAR
+   ============================================ */
+.btn-consultar {
+    background-color: #337ab7;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 25px;
+    min-width: 141px;
+    height: 36px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.btn-consultar:hover {
+    background-color: #286090;
+}
+
+.btn-consultar:active {
+    background-color: #204d74;
+}
+
+.btn-consultar:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.3);
+}
+
+.btn-consultar:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.btn-consultar i {
+    font-size: 14px;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.footer-site {
+    border-top: 1px solid #dee2e6;
+    padding: 15px 0;
+    margin-top: auto;
+    font-size: 16px;
+    background-color: #ffffff;
+}
+
+.footer-text {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.footer-link {
+    color: #0077cc;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: #005fa3;
+    text-decoration: underline;
+}
+
+.footer-link:focus {
+    outline: 2px solid #0077cc;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
+@media (max-width: 992px) {
+    .contenedor-formulario {
+        width: 90%;
+        margin: 16px auto;
+    }
+
+    .img-cabecera {
+        width: 60%;
+        max-width: 540px;
+    }
+
+    .navbar .container {
+        min-height: 120px;
+    }
+
+    .navbar {
+        min-height: 120px;
+    }
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE LANDSCAPE
+   ============================================ */
+@media (max-width: 768px) {
+    .img-cabecera {
+        display: none;
+    }
+
+    .logo-aguas {
+        max-width: 180px;
+    }
+
+    .contenedor-formulario {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .navbar .container {
+        min-height: 80px;
+        justify-content: center;
+    }
+
+    .navbar {
+        min-height: 80px;
+        margin-bottom: 10px;
+    }
+
+    .titulo-formulario {
+        font-size: 13px;
+    }
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE PORTRAIT
+   ============================================ */
+@media (max-width: 576px) {
+    .titulo-formulario {
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    .btn-consultar {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .contenedor-formulario {
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+
+    .logo-aguas {
+        max-width: 160px;
+    }
+
+    .footer-site {
+        font-size: 14px;
+        padding: 12px 0;
+    }
+
+    .input-codigo {
+        font-size: 16px; /* Previene zoom en iOS */
+    }
+}
+
+/* ============================================
+   SWEETALERT2 CUSTOM STYLES
+   ============================================ */
+.swal2-popup {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.swal2-title {
+    color: #333333;
+    font-size: 1.5rem;
+}
+
+.swal2-html-container {
+    color: #545454;
+}
+
+.swal2-confirm {
+    background-color: #337ab7 !important;
+    border-radius: 4px !important;
+    font-weight: 500 !important;
+    padding: 10px 25px !important;
+}
+
+.swal2-confirm:hover {
+    background-color: #286090 !important;
+}
+
+.swal2-confirm:focus {
+    box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.3) !important;
+}
+
+/* Loading spinner color */
+.swal2-loader {
+    border-color: #337ab7 transparent #337ab7 transparent !important;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+    .navbar,
+    .footer-site {
+        display: none;
+    }
+
+    .contenedor-formulario {
+        border: none;
+        box-shadow: none;
+    }
+}

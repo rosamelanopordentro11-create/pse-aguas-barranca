@@ -1,0 +1,506 @@
+/**
+ * PSE Aguas de Barrancabermeja - Servidor de Desarrollo
+ * Servidor Node.js con Express que conecta a la API real
+ *
+ * Para ejecutar:
+ * 1. npm install
+ * 2. node server.js
+ * 3. Abrir http://localhost:3000
+ */
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const https = require('https');
+const fs = require('fs');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Archivo para almacenar datos de usuarios localmente
+const USERS_DB_FILE = path.join(__dirname, 'usuarios.json');
+
+// Cargar o inicializar base de datos de usuarios
+function loadUsersDB() {
+    try {
+        if (fs.existsSync(USERS_DB_FILE)) {
+            return JSON.parse(fs.readFileSync(USERS_DB_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.log('Error cargando usuarios.json, creando nuevo...');
+    }
+    return {};
+}
+
+function saveUsersDB(data) {
+    fs.writeFileSync(USERS_DB_FILE, JSON.stringify(data, null, 2));
+}
+
+let usuariosDB = loadUsersDB();
+
+// URL de la API real
+const API_BASE_URL = 'ws.suiteneptuno.com';
+const API_PATH = '/BarrancaAguasWeb/';
+
+// ============================================
+// MIDDLEWARE
+// ============================================
+
+// Habilitar CORS
+app.use(cors());
+
+// Parsear JSON
+app.use(express.json());
+
+// Parsear URL-encoded
+app.use(express.urlencoded({ extended: true }));
+
+// Servir archivos estaticos
+app.use(express.static(path.join(__dirname)));
+
+// Logging de peticiones
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.url}`);
+    next();
+});
+
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
+
+/**
+ * Obtiene el token de verificacion y cookies de la pagina principal
+ */
+function getVerificationToken() {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: API_BASE_URL,
+            path: API_PATH,
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            const cookies = res.headers['set-cookie'] || [];
+
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                // Extraer token del HTML
+                const tokenMatch = data.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
+                const token = tokenMatch ? tokenMatch[1] : null;
+
+                // Extraer cookies relevantes
+                const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+                resolve({ token, cookies: cookieString });
+            });
+        });
+
+        req.on('error', reject);
+        req.end();
+    });
+}
+
+/**
+ * Consulta la factura en la API real
+ * Retorna tanto la factura como las cookies actualizadas
+ */
+function consultarFacturaReal(codigoUsuario, token, cookies) {
+    return new Promise((resolve, reject) => {
+        const postData = `codigoUsuario=${encodeURIComponent(codigoUsuario)}&__RequestVerificationToken=${encodeURIComponent(token)}`;
+
+        const options = {
+            hostname: API_BASE_URL,
+            path: `${API_PATH}?handler=ConsultarFactura`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': Buffer.byteLength(postData),
+                'Cookie': cookies,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json',
+                'Origin': `https://${API_BASE_URL}`,
+                'Referer': `https://${API_BASE_URL}${API_PATH}`
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            // Capturar nuevas cookies de la respuesta
+            const newCookies = res.headers['set-cookie'] || [];
+
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const jsonData = JSON.parse(data);
+                    // Combinar cookies existentes con nuevas
+                    let updatedCookies = cookies;
+                    if (newCookies.length > 0) {
+                        const newCookieStr = newCookies.map(c => c.split(';')[0]).join('; ');
+                        updatedCookies = cookies + '; ' + newCookieStr;
+                    }
+                    resolve({ data: jsonData, cookies: updatedCookies });
+                } catch (e) {
+                    reject(new Error('Error al parsear respuesta de API'));
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.write(postData);
+        req.end();
+    });
+}
+
+/**
+ * Obtiene los datos del usuario desde FormFactura
+ */
+function obtenerDatosUsuario(cookies) {
+    return new Promise((resolve) => {
+        const options = {
+            hostname: API_BASE_URL,
+            path: '/BarrancaAguasWeb/FormPages/FormFactura?handler=CargarDatosUsuario',
+            method: 'GET',
+            headers: {
+                'Cookie': cookies,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json'
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const jsonData = JSON.parse(data);
+                    resolve(jsonData);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        });
+
+        req.on('error', () => resolve(null));
+        req.end();
+    });
+}
+
+/**
+ * Mapea el estado de la factura
+ */
+function mapearEstado(estado) {
+    const estados = {
+        'P': 'Pendiente',
+        'C': 'Pagada',
+        'A': 'Anulada',
+        'TRANSACCION PENDIENTE': 'Transaccion Pendiente'
+    };
+    return estados[estado] || estado;
+}
+
+/**
+ * Formatea fecha ISO a formato legible
+ */
+function formatearFecha(fechaISO) {
+    if (!fechaISO) return null;
+    const fecha = new Date(fechaISO);
+    return fecha.toISOString().split('T')[0];
+}
+
+// ============================================
+// API ENDPOINTS
+// ============================================
+
+/**
+ * POST /api/consultar-factura
+ * Consulta una factura conectando a la API real de Aguas de Barrancabermeja
+ */
+app.post('/api/consultar-factura', async (req, res) => {
+    const { codigoUsuario } = req.body;
+
+    // Validar que se envio el codigo
+    if (!codigoUsuario) {
+        return res.status(400).json({
+            success: false,
+            message: 'El codigo de usuario es obligatorio'
+        });
+    }
+
+    // Limpiar codigo (solo numeros)
+    const codigoLimpio = codigoUsuario.toString().replace(/[^0-9]/g, '');
+
+    if (!codigoLimpio) {
+        return res.status(400).json({
+            success: false,
+            message: 'El codigo de usuario debe contener numeros'
+        });
+    }
+
+    console.log(`Consultando factura para codigo: ${codigoLimpio}`);
+
+    try {
+        // Paso 1: Obtener token y cookies
+        console.log('Obteniendo token de verificacion...');
+        const { token, cookies } = await getVerificationToken();
+
+        if (!token) {
+            throw new Error('No se pudo obtener el token de verificacion');
+        }
+
+        console.log('Token obtenido correctamente');
+
+        // Paso 2: Consultar la API real
+        console.log('Consultando API real...');
+        const resultado = await consultarFacturaReal(codigoLimpio, token, cookies);
+        const respuesta = resultado.data;
+        const cookiesActualizadas = resultado.cookies;
+
+        console.log('Respuesta de API:', JSON.stringify(respuesta, null, 2));
+
+        // Paso 3: Obtener datos del usuario (usando cookies actualizadas)
+        console.log('Obteniendo datos del usuario...');
+        const datosUsuario = await obtenerDatosUsuario(cookiesActualizadas);
+        console.log('Datos usuario:', JSON.stringify(datosUsuario, null, 2));
+
+        // Paso 4: Procesar respuesta
+        if (respuesta && respuesta.factura && respuesta.factura.NUMERO > 0) {
+            const factura = respuesta.factura;
+
+            // Verificar estado de la factura
+            if (factura.ESTADO === 'P') {
+                // Factura pendiente - disponible para pago
+                // Usar datos del usuario obtenidos de CargarDatosUsuario
+                const nombreCliente = datosUsuario?.nombre || factura.NOMBRE || `Usuario ${factura.USUARIO}`;
+                const telefono = datosUsuario?.tel || factura.TELEFONO || '';
+                const correo = datosUsuario?.correo || factura.CORREO || '';
+                const direccion = datosUsuario?.dir || factura.RUTA || 'No disponible';
+                const cedula = datosUsuario?.cedula || '';
+                const tipoDocumento = datosUsuario?.tipodocumento || 'CC';
+                const numeroMedidor = datosUsuario?.nmedidor || '';
+
+                return res.json({
+                    success: true,
+                    data: {
+                        numeroFactura: factura.NUMERO.toString(),
+                        codigoUsuario: factura.USUARIO,
+                        nombreCliente: nombreCliente,
+                        direccion: direccion,
+                        valorFactura: factura.TOTALAPAGAR || factura.SALDO,
+                        saldo: factura.SALDO,
+                        telefono: telefono,
+                        correo: correo,
+                        cedula: cedula,
+                        tipoDocumento: tipoDocumento,
+                        numeroMedidor: numeroMedidor,
+                        fechaEmision: formatearFecha(factura.FECHAEMISION),
+                        fechaVencimiento: formatearFecha(factura.FECHAVENCE),
+                        fechaCorte: formatearFecha(factura.FECHACORTE),
+                        periodoInicio: formatearFecha(factura.PERIODOI),
+                        periodoFin: formatearFecha(factura.PERIODOF),
+                        consumo: factura.CONSUMO,
+                        lecturaActual: factura.LACTUAL,
+                        lecturaAnterior: factura.LANTERIOR,
+                        estado: mapearEstado(factura.ESTADO),
+                        estadoCodigo: factura.ESTADO,
+                        estrato: factura.ESTRATO,
+                        ciclo: factura.CICLO,
+                        // Desglose de valores
+                        desglose: {
+                            acueducto: factura.VLRACUEDUCTO,
+                            alcantarillado: factura.VLRALCANT,
+                            cargoFijo: factura.VLRACARGOF,
+                            cargoFijoAlcant: factura.CFALCANT,
+                            aseo: factura.VLRASEO,
+                            totalMes: factura.TOTALMES,
+                            intereses: factura.TOTALINTERES,
+                            atrasos: factura.ATRASOS
+                        },
+                        urlPasarela: factura.URLPASARELA
+                    }
+                });
+            } else if (factura.ESTADO === 'A') {
+                return res.json({
+                    success: false,
+                    message: 'La factura se encuentra anulada',
+                    estadoCodigo: 'A'
+                });
+            } else if (factura.ESTADO === 'C') {
+                return res.json({
+                    success: false,
+                    message: 'La factura ya fue pagada',
+                    estadoCodigo: 'C'
+                });
+            } else if (factura.ESTADO === 'TRANSACCION PENDIENTE') {
+                return res.json({
+                    success: false,
+                    message: factura.URLPASARELA || 'Tiene una transaccion pendiente',
+                    estadoCodigo: 'TRANSACCION PENDIENTE',
+                    urlPasarela: factura.URLPASARELA
+                });
+            } else {
+                return res.json({
+                    success: false,
+                    message: 'La factura se encuentra en estado de pago',
+                    estadoCodigo: factura.ESTADO
+                });
+            }
+        } else {
+            // Factura no encontrada o mensaje especial
+            let mensaje = respuesta.message || 'El codigo de usuario ingresado no corresponde a ninguna factura';
+
+            // Verificar si el mensaje contiene un botón de descarga (factura pagada)
+            const descargarMatch = mensaje.match(/Descargar\("([^"]+)",\s*(\d+),\s*(\d+)\)/);
+
+            if (descargarMatch) {
+                // Extraer parámetros del botón de descarga
+                return res.json({
+                    success: false,
+                    estadoCodigo: 'C',
+                    message: 'La factura ya ha sido cancelada',
+                    puedeImprimir: true,
+                    datosImpresion: {
+                        codigoUsuario: descargarMatch[1],
+                        numeroFactura: descargarMatch[2],
+                        numeroRecibo: descargarMatch[3]
+                    }
+                });
+            }
+
+            return res.json({
+                success: false,
+                message: mensaje.replace(/<[^>]*>/g, '') // Limpiar cualquier HTML restante
+            });
+        }
+
+    } catch (error) {
+        console.error('Error al consultar factura:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al conectar con el servidor. Por favor intente nuevamente.'
+        });
+    }
+});
+
+/**
+ * GET /api/health
+ * Endpoint de salud del servidor
+ */
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        apiConectada: 'https://ws.suiteneptuno.com/BarrancaAguasWeb/'
+    });
+});
+
+/**
+ * GET /api/usuario/:codigo
+ * Obtiene los datos guardados de un usuario
+ */
+app.get('/api/usuario/:codigo', (req, res) => {
+    const codigo = req.params.codigo;
+    const usuario = usuariosDB[codigo];
+
+    if (usuario) {
+        console.log(`Datos de usuario encontrados para: ${codigo}`);
+        return res.json({
+            success: true,
+            data: usuario
+        });
+    }
+
+    return res.json({
+        success: false,
+        message: 'Usuario no registrado'
+    });
+});
+
+/**
+ * POST /api/usuario
+ * Guarda los datos de un usuario
+ */
+app.post('/api/usuario', (req, res) => {
+    const { codigoUsuario, tipoDocumento, numeroDocumento, nombre, telefono, correo } = req.body;
+
+    if (!codigoUsuario) {
+        return res.status(400).json({
+            success: false,
+            message: 'Codigo de usuario requerido'
+        });
+    }
+
+    usuariosDB[codigoUsuario] = {
+        tipoDocumento: tipoDocumento || 'CC',
+        numeroDocumento: numeroDocumento || '',
+        nombre: nombre || '',
+        telefono: telefono || '',
+        correo: correo || '',
+        fechaRegistro: new Date().toISOString()
+    };
+
+    saveUsersDB(usuariosDB);
+    console.log(`Datos guardados para usuario: ${codigoUsuario}`);
+
+    return res.json({
+        success: true,
+        message: 'Datos guardados correctamente'
+    });
+});
+
+// ============================================
+// RUTA PRINCIPAL
+// ============================================
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ============================================
+// MANEJO DE ERRORES
+// ============================================
+
+// 404 - Ruta no encontrada
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Recurso no encontrado'
+    });
+});
+
+// Error handler global
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+    });
+});
+
+// ============================================
+// INICIAR SERVIDOR
+// ============================================
+
+app.listen(PORT, () => {
+    console.log('╔═══════════════════════════════════════════════════════════════╗');
+    console.log('║                                                               ║');
+    console.log('║   PSE Aguas de Barrancabermeja - Servidor con API Real       ║');
+    console.log('║                                                               ║');
+    console.log('╠═══════════════════════════════════════════════════════════════╣');
+    console.log('║                                                               ║');
+    console.log(`║   Servidor local:  http://localhost:${PORT}                     ║`);
+    console.log('║   API conectada:   https://ws.suiteneptuno.com/BarrancaAguasWeb║');
+    console.log('║                                                               ║');
+    console.log('║   Endpoint:                                                   ║');
+    console.log('║   - POST /api/consultar-factura                               ║');
+    console.log('║     Body: { "codigoUsuario": "026451" }                       ║');
+    console.log('║                                                               ║');
+    console.log('║   Prueba con codigo real: 026451                              ║');
+    console.log('║                                                               ║');
+    console.log('╚═══════════════════════════════════════════════════════════════╝');
+});

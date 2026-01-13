@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PSE Aguas de Barrancabermeja - Sistema de consulta y pago de facturas de agua">
+    <meta name="keywords" content="PSE, Aguas, Barrancabermeja, facturas, pago, consulta">
+    <meta name="author" content="Microshif Smart Systems">
+
+    <title>PSE Aguas Barranca - Consulta de Facturas</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/logo-aguas.png">
+
+    <!-- Bootstrap 5.3.0 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome 6.5.1 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* ============================================
+           RESET Y ESTILOS BASE
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+            background-color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333333;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           HEADER/NAVBAR - IDENTICO AL ORIGINAL
+           ============================================ */
+        .header-container {
+            width: 100%;
+            position: relative;
+            min-height: 160px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .header-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            padding: 10px 15px;
+        }
+
+        /* Logo Aguas de Barrancabermeja - Izquierda */
+        .logo-aguas {
+            max-width: 180px;
+            height: auto;
+            z-index: 10;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* Imagen decorativa cabecera (gota de agua) - Derecha */
+        .img-cabecera-container {
+            position: absolute;
+            right: 0;
+            top: 0;
+            z-index: 1;
+        }
+
+        .img-cabecera {
+            max-height: 160px;
+            width: auto;
+            max-width: 900px;
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        main {
+            flex: 1;
+            padding-bottom: 20px;
+        }
+
+        /* ============================================
+           CONTENEDOR DEL FORMULARIO
+           ============================================ */
+        .contenedor-formulario {
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 25px 30px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        /* ============================================
+           TITULO DEL FORMULARIO
+           ============================================ */
+        .titulo-formulario {
+            color: #004f80;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        /* ============================================
+           FORMULARIO
+           ============================================ */
+        .formulario-consulta {
+            width: 100%;
+        }
+
+        /* ============================================
+           CAMPO DE INPUT
+           ============================================ */
+        .campo-input {
+            margin-bottom: 10px;
+        }
+
+        .input-codigo {
+            width: 100%;
+            height: 38px;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 2px solid #28a745;
+            border-radius: 4px;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: #ffffff;
+        }
+
+        .input-codigo:focus {
+            border-color: #218838;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
+        }
+
+        .input-codigo::placeholder {
+            color: #6c757d;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        /* Estado de error del input */
+        .input-codigo.input-error {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+        }
+
+        /* ============================================
+           MENSAJE DE AYUDA/VALIDACION
+           ============================================ */
+        .mensaje-ayuda {
+            display: block;
+            color: #8abc02;
+            font-size: 11px;
+            margin-top: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* ============================================
+           BOTON CONSULTAR
+           ============================================ */
+        .btn-consultar {
+            background-color: #337ab7;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 25px;
+            min-width: 150px;
+            height: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-consultar:hover {
+            background-color: #286090;
+        }
+
+        .btn-consultar:active {
+            background-color: #204d74;
+        }
+
+        .btn-consultar:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.3);
+        }
+
+        .btn-consultar:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .btn-consultar i {
+            font-size: 14px;
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .footer-site {
+            border-top: 1px solid #dee2e6;
+            padding: 15px 0;
+            margin-top: auto;
+            font-size: 16px;
+            background-color: #ffffff;
+        }
+
+        .footer-text {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .footer-link {
+            color: #0077cc;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: #005fa3;
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           UTILIDADES
+           ============================================ */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ============================================
+           ANIMACIONES
+           ============================================ */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* ============================================
+           RESPONSIVE - TABLET
+           ============================================ */
+        @media (max-width: 992px) {
+            .contenedor-formulario {
+                width: 90%;
+                margin: 20px auto;
+            }
+
+            .img-cabecera {
+                max-width: 60%;
+            }
+
+            .header-container {
+                min-height: 130px;
+            }
+        }
+
+        /* ============================================
+           RESPONSIVE - MOBILE
+           ============================================ */
+        @media (max-width: 768px) {
+            .img-cabecera-container {
+                display: none;
+            }
+
+            .header-wrapper {
+                justify-content: center;
+            }
+
+            .logo-aguas {
+                max-width: 200px;
+            }
+
+            .contenedor-formulario {
+                width: 95%;
+                padding: 20px;
+            }
+
+            .header-container {
+                min-height: 100px;
+            }
+
+            .titulo-formulario {
+                font-size: 13px;
+            }
+        }
+
+        /* ============================================
+           RESPONSIVE - MOBILE PORTRAIT
+           ============================================ */
+        @media (max-width: 576px) {
+            .titulo-formulario {
+                font-size: 12px;
+                margin-bottom: 15px;
+            }
+
+            .btn-consultar {
+                width: 100%;
+                max-width: 280px;
+            }
+
+            .contenedor-formulario {
+                margin: 15px;
+                width: calc(100% - 30px);
+                padding: 15px;
+            }
+
+            .logo-aguas {
+                max-width: 160px;
+            }
+
+            .footer-site {
+                font-size: 14px;
+                padding: 12px 0;
+            }
+
+            .input-codigo {
+                font-size: 16px; /* Previene zoom en iOS */
+            }
+        }
+
+        /* ============================================
+           SWEETALERT2 CUSTOM STYLES
+           ============================================ */
+        .swal2-popup {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .swal2-title {
+            color: #333333;
+            font-size: 1.5rem;
+        }
+
+        .swal2-html-container {
+            color: #545454;
+        }
+
+        .swal2-confirm {
+            background-color: #337ab7 !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            padding: 10px 25px !important;
+        }
+
+        .swal2-confirm:hover {
+            background-color: #286090 !important;
+        }
+
+        .swal2-confirm:focus {
+            box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.3) !important;
+        }
+
+        /* Loading spinner color */
+        .swal2-loader {
+            border-color: #337ab7 transparent #337ab7 transparent !important;
+        }
+
+        /* ============================================
+           PRINT STYLES
+           ============================================ */
+        @media print {
+            .header-container,
+            .footer-site {
+                display: none;
+            }
+
+            .contenedor-formulario {
+                border: none;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header/Banner - Logo separado de imagen decorativa -->
+    <header class="header-container">
+        <div class="header-wrapper">
+            <!-- Logo Aguas de Barrancabermeja - Izquierda -->
+            <a href="/" aria-label="Ir al inicio">
+                <img
+                    src="images/logo-aguas.png"
+                    alt="Logo Aguas de Barrancabermeja"
+                    class="logo-aguas"
+                >
+            </a>
+            <!-- Imagen decorativa cabecera (gota de agua) - Derecha -->
+            <div class="img-cabecera-container">
+                <img
+                    src="images/img_cabecera.png"
+                    alt=""
+                    class="img-cabecera"
+                    aria-hidden="true"
+                >
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main role="main" aria-label="Contenido principal">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12">
+                    <!-- Contenedor del Formulario -->
+                    <div class="contenedor-formulario" role="region" aria-labelledby="tituloFormulario">
+                        <!-- Titulo del formulario -->
+                        <h1 class="titulo-formulario" id="tituloFormulario">
+                            INGRESE EL CODIGO DEL USUARIO
+                        </h1>
+
+                        <!-- Formulario de consulta -->
+                        <form id="consultaForm" class="formulario-consulta" novalidate>
+                            <!-- Campo de codigo de usuario -->
+                            <div class="campo-input">
+                                <label for="codigoUsuario" class="visually-hidden">
+                                    Codigo de Usuario
+                                </label>
+                                <input
+                                    type="text"
+                                    id="codigoUsuario"
+                                    name="codigoUsuario"
+                                    class="input-codigo"
+                                    placeholder="CODIGO DE USUARIO"
+                                    maxlength="10"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
+                                    autocomplete="off"
+                                    aria-required="true"
+                                    aria-describedby="mensajeAyuda"
+                                >
+                                <!-- Mensaje de ayuda/validacion -->
+                                <span class="mensaje-ayuda" id="mensajeAyuda" role="status">
+                                    CODIGO DE USUARIO ES OBLIGATORIO
+                                </span>
+                            </div>
+
+                            <!-- Boton de consultar -->
+                            <div class="text-center mt-3">
+                                <button
+                                    type="submit"
+                                    class="btn-consultar"
+                                    aria-label="Consultar factura"
+                                >
+                                    <i class="fas fa-search" aria-hidden="true"></i>
+                                    <span>CONSULTAR</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-site" role="contentinfo">
+        <div class="container text-center">
+            <span class="footer-text">Desarrollado por: </span>
+            <a
+                href="https://microshif.com.co/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="footer-link"
+                aria-label="Visitar sitio web de Microshif Smart Systems (abre en nueva ventana)"
+            >
+                Microshif Smart Systems
+            </a>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5.3.0 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Custom JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>
