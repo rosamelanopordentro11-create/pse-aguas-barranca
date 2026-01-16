@@ -283,6 +283,15 @@ app.post('/api/consultar-factura', async (req, res) => {
                 const tipoDocumento = datosUsuario?.tipodocumento || 'CC';
                 const numeroMedidor = datosUsuario?.nmedidor || '';
 
+                // Calcular descuento del 15%
+                const valorOriginal = factura.TOTALAPAGAR || factura.SALDO;
+                const porcentajeDescuento = 15;
+                const valorDescuento = Math.round(valorOriginal * (porcentajeDescuento / 100));
+                const valorConDescuento = valorOriginal - valorDescuento;
+                const totalMesOriginal = factura.TOTALMES || valorOriginal;
+                const valorDescuentoMes = Math.round(totalMesOriginal * (porcentajeDescuento / 100));
+                const totalMesConDescuento = totalMesOriginal - valorDescuentoMes;
+
                 return res.json({
                     success: true,
                     data: {
@@ -290,7 +299,11 @@ app.post('/api/consultar-factura', async (req, res) => {
                         codigoUsuario: factura.USUARIO,
                         nombreCliente: nombreCliente,
                         direccion: direccion,
-                        valorFactura: factura.TOTALAPAGAR || factura.SALDO,
+                        // Valores con descuento
+                        valorFactura: valorConDescuento,
+                        valorFacturaOriginal: valorOriginal,
+                        descuento: valorDescuento,
+                        porcentajeDescuento: porcentajeDescuento,
                         saldo: factura.SALDO,
                         telefono: telefono,
                         correo: correo,
@@ -316,7 +329,9 @@ app.post('/api/consultar-factura', async (req, res) => {
                             cargoFijo: factura.VLRACARGOF,
                             cargoFijoAlcant: factura.CFALCANT,
                             aseo: factura.VLRASEO,
-                            totalMes: factura.TOTALMES,
+                            totalMes: totalMesConDescuento,
+                            totalMesOriginal: totalMesOriginal,
+                            descuentoMes: valorDescuentoMes,
                             intereses: factura.TOTALINTERES,
                             atrasos: factura.ATRASOS
                         },

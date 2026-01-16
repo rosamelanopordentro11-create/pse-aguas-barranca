@@ -526,8 +526,16 @@
                                 <span class="info-value" id="suscriptor">0</span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">VALOR:</span>
-                                <span class="info-value" id="valor">$0</span>
+                                <span class="info-label">VALOR ORIGINAL:</span>
+                                <span class="info-value" id="valorOriginal" style="text-decoration: line-through; color: #999; font-size: 12px;">$0</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label" style="color: #28a745;">DESCUENTO 15%:</span>
+                                <span class="info-value" id="valorDescuento" style="color: #28a745;">-$0</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">VALOR A PAGAR:</span>
+                                <span class="info-value" id="valor" style="color: #004F80; font-size: 15px;">$0</span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">VALOR MES:</span>
@@ -773,12 +781,23 @@
             // Panel de informacion - formato $9787.00
             document.getElementById('numeroFac').textContent = factura.numeroFactura;
             document.getElementById('suscriptor').textContent = factura.codigoUsuario;
+
+            // Mostrar valor original tachado
+            document.getElementById('valorOriginal').textContent = formatCurrencyOriginal(factura.valorFacturaOriginal || factura.valorFactura);
+
+            // Mostrar descuento
+            document.getElementById('valorDescuento').textContent = '-' + formatCurrencyOriginal(factura.descuento || 0);
+
+            // Mostrar valor con descuento
             document.getElementById('valor').textContent = formatCurrencyOriginal(factura.valorFactura);
             document.getElementById('valorMes').textContent = formatCurrencyOriginal(factura.desglose?.totalMes || factura.valorFactura);
 
-            // Opciones de pago con formato colombiano ($ 9.787,00)
-            document.getElementById('pagoTotalBullet').textContent = '$ ' + formatNumberColombian(factura.valorFactura);
-            document.getElementById('pagoMesBullet').textContent = '$ ' + formatNumberColombian(factura.desglose?.totalMes || factura.valorFactura);
+            // Opciones de pago con formato colombiano ($ 9.787,00) - mostrar descuento
+            const valorOriginalTotal = factura.valorFacturaOriginal || factura.valorFactura;
+            const valorOriginalMes = factura.desglose?.totalMesOriginal || factura.desglose?.totalMes || factura.valorFactura;
+
+            document.getElementById('pagoTotalBullet').innerHTML = '<span style="text-decoration: line-through; color: #999; font-size: 12px;">$ ' + formatNumberColombian(valorOriginalTotal) + '</span> <span style="color: #28a745; font-weight: bold;">$ ' + formatNumberColombian(factura.valorFactura) + '</span> <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">-15%</span>';
+            document.getElementById('pagoMesBullet').innerHTML = '<span style="text-decoration: line-through; color: #999; font-size: 12px;">$ ' + formatNumberColombian(valorOriginalMes) + '</span> <span style="color: #28a745; font-weight: bold;">$ ' + formatNumberColombian(factura.desglose?.totalMes || factura.valorFactura) + '</span> <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">-15%</span>';
 
             // Datos del suscriptor - usar datos de la API
             document.getElementById('nombres').value = factura.nombreCliente || '';
