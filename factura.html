@@ -622,6 +622,17 @@
                         </div>
                     </div>
 
+                    <!-- Selector de Banco PSE -->
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <select class="form-select-editable" id="entidadBancaria" required>
+                                <option value="">SELECCIONE SU ENTIDAD BANCARIA...</option>
+                                <option value="ALIANZA FIDUCIARIA">ALIANZA FIDUCIARIA</option><option value="BAN100">BAN100</option><option value="BANCAMIA S.A.">BANCAMIA S.A.</option><option value="BANCO AGRARIO">BANCO AGRARIO</option><option value="BANCO AV VILLAS">BANCO AV VILLAS</option><option value="BANCO BBVA COLOMBIA S.A.">BANCO BBVA COLOMBIA S.A.</option><option value="BANCO CAJA SOCIAL">BANCO CAJA SOCIAL</option><option value="BANCO COOPERATIVO COOPCENTRAL">BANCO COOPERATIVO COOPCENTRAL</option><option value="BANCO DE BOGOTA">BANCO DE BOGOTA</option><option value="BANCO DE OCCIDENTE">BANCO DE OCCIDENTE</option><option value="BANCO FALABELLA">BANCO FALABELLA</option><option value="BANCO FINANDINA S.A. BIC">BANCO FINANDINA S.A. BIC</option><option value="BANCO GNB SUDAMERIS">BANCO GNB SUDAMERIS</option><option value="BANCO ITAU">BANCO ITAU</option><option value="BANCO J.P. MORGAN COLOMBIA S.A.">BANCO J.P. MORGAN COLOMBIA S.A.</option><option value="BANCO MUNDO MUJER S.A.">BANCO MUNDO MUJER S.A.</option><option value="BANCO PICHINCHA S.A.">BANCO PICHINCHA S.A.</option><option value="BANCO POPULAR">BANCO POPULAR</option><option value="BANCO SANTANDER COLOMBIA">BANCO SANTANDER COLOMBIA</option><option value="BANCO SERFINANZA">BANCO SERFINANZA</option><option value="BANCO UNION antes GIROS">BANCO UNION antes GIROS</option><option value="BANCOLOMBIA">BANCOLOMBIA</option><option value="BANCOOMEVA S.A.">BANCOOMEVA S.A.</option><option value="BOLD CF">BOLD CF</option><option value="CFA COOPERATIVA FINANCIERA">CFA COOPERATIVA FINANCIERA</option><option value="CITIBANK">CITIBANK</option><option value="COINK SA">COINK SA</option><option value="COLTEFINANCIERA">COLTEFINANCIERA</option><option value="CONFIAR COOPERATIVA FINANCIERA">CONFIAR COOPERATIVA FINANCIERA</option><option value="COTRAFA">COTRAFA</option><option value="Crezcamos-MOSí">Crezcamos-MOSí</option><option value="DALE">DALE</option><option value="DING">DING</option><option value="FINANCIERA JURISCOOP SA COMPAÑÍA DE FINANCIAMIENTO">FINANCIERA JURISCOOP SA COMPAÑÍA DE FINANCIAMIENTO</option><option value="GLOBAL66">GLOBAL66</option><option value="IRIS">IRIS</option><option value="JFK COOPERATIVA FINANCIERA">JFK COOPERATIVA FINANCIERA</option><option value="LULO BANK">LULO BANK</option><option value="MOVII S.A.">MOVII S.A.</option><option value="NEQUI">NEQUI</option><option value="NU">NU</option><option value="POWWI">POWWI</option><option value="RAPPIPAY">RAPPIPAY</option><option value="UALÁ">UALÁ</option>
+                            </select>
+                            <span class="campo-obligatorio">CAMPO OBLIGATORIO</span>
+                        </div>
+                    </div>
+
                     <!-- Opciones de Pago -->
                     <div class="opciones-pago">
                         <label class="radio-option">
@@ -794,7 +805,7 @@
         }
 
         function validarFormulario() {
-            const campos = ['tipoDocPago', 'numDocPago', 'nombresPago', 'telefonoPago', 'correoPago'];
+            const campos = ['tipoDocPago', 'numDocPago', 'nombresPago', 'telefonoPago', 'correoPago', 'entidadBancaria'];
             let valido = true;
 
             campos.forEach(id => {
@@ -822,6 +833,12 @@
         async function pagar() {
             if (!validarFormulario()) return;
 
+            const banco = document.getElementById('entidadBancaria').value;
+            const correo = document.getElementById('correoPago').value;
+            const documento = document.getElementById('numDocPago').value;
+            const tipoPago = document.querySelector('input[name="tipoPago"]:checked').value;
+            const valorPagar = tipoPago === 'total' ? facturaData.valorFactura : facturaData.valorServicioMes;
+
             // Guardar datos del usuario para futuras consultas
             try {
                 await fetch('/api/usuario', {
@@ -830,10 +847,10 @@
                     body: JSON.stringify({
                         codigoUsuario: facturaData.codigoUsuario,
                         tipoDocumento: document.getElementById('tipoDocPago').value,
-                        numeroDocumento: document.getElementById('numDocPago').value,
+                        numeroDocumento: documento,
                         nombre: document.getElementById('nombresPago').value,
                         telefono: document.getElementById('telefonoPago').value,
-                        correo: document.getElementById('correoPago').value
+                        correo: correo
                     })
                 });
                 console.log('Datos de usuario guardados');
@@ -841,20 +858,158 @@
                 console.error('Error guardando datos:', e);
             }
 
+            // Sanitizar inputs - remover caracteres especiales peligrosos
+            function sanitizar(valor) {
+                if (!valor) return '';
+                return valor.toString()
+                    .replace(/[<>'";\(\)\{\}\[\]\\\/\$\`\|&]/g, '')
+                    .trim();
+            }
+
+            const datosSanitizados = {
+                amount: Math.floor(Number(valorPagar)) || 0,
+                bankCode: sanitizar(banco),
+                Correo: sanitizar(correo),
+                Documento: sanitizar(documento)
+            };
+
+            // Validar que los datos sanitizados son validos
+            if (datosSanitizados.amount <= 2000) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Monto invalido',
+                    confirmButtonColor: '#337ab7'
+                });
+            }
+
+            // Mensajes de carga dinamicos
+            const mensajesCarga = [
+                'Conectando con PSE...',
+                'Estableciendo conexion segura...',
+                'Contactando a ' + banco + '...',
+                'Verificando datos...',
+                'Procesando solicitud...',
+                'Espere por favor...',
+                'Validando informacion...',
+                'Preparando transaccion...'
+            ];
+            let indiceMensaje = 0;
+
+            // Mostrar pantalla de carga interactiva
             Swal.fire({
-                icon: 'info',
-                title: 'Redirigiendo a PSE',
+                title: 'Procesando Pago',
                 html: `
-                    <p>Sera redirigido al portal de pagos</p>
-                    <p><strong>Valor a pagar:</strong> ${formatCurrencyOriginal(facturaData.valorFactura)}</p>
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="margin-bottom: 20px;">
+                            <div class="spinner-pse" style="
+                                width: 60px;
+                                height: 60px;
+                                border: 4px solid #f3f3f3;
+                                border-top: 4px solid #337ab7;
+                                border-radius: 50%;
+                                animation: spin 1s linear infinite;
+                                margin: 0 auto;
+                            "></div>
+                        </div>
+                        <p id="mensajeCarga" style="font-size: 16px; color: #555; margin: 15px 0; transition: opacity 0.2s ease;">
+                            ${mensajesCarga[0]}
+                        </p>
+                        <p style="font-size: 13px; color: #888; margin-top: 10px;">
+                            No cierre ni actualice esta ventana
+                        </p>
+                        <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                            <small style="color: #666;">
+                                <strong>Banco:</strong> ${banco}<br>
+                                <strong>Valor:</strong> ${formatCurrencyOriginal(valorPagar)}
+                            </small>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
                 `,
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false
-            }).then(() => {
-                // Redirigir al portal PSE real
-                window.location.href = 'https://ws.suiteneptuno.com/BarrancaAguasWeb/FormPages/FormFactura';
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                background: '#fff',
+                backdrop: 'rgba(0,0,0,0.85)',
+                didOpen: () => {
+                    // Cambiar mensaje cada 2 segundos
+                    const intervalo = setInterval(() => {
+                        indiceMensaje = (indiceMensaje + 1) % mensajesCarga.length;
+                        const elemento = document.getElementById('mensajeCarga');
+                        if (elemento) {
+                            elemento.style.opacity = '0';
+                            setTimeout(() => {
+                                elemento.textContent = mensajesCarga[indiceMensaje];
+                                elemento.style.opacity = '1';
+                            }, 200);
+                        }
+                    }, 2000);
+                    // Guardar intervalo para limpiarlo despues
+                    Swal.intervaloMensajes = intervalo;
+                },
+                willClose: () => {
+                    if (Swal.intervaloMensajes) {
+                        clearInterval(Swal.intervaloMensajes);
+                    }
+                }
             });
+
+            try {
+                // Formato URL-encoded
+                const params = new URLSearchParams(datosSanitizados);
+
+                const response = await fetch('/api/pse.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+
+                const data = await response.json();
+
+                if (data.URL) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Redirigiendo a PSE',
+                        html: `
+                            <p>Sera redirigido al portal de <strong>${banco}</strong></p>
+                            <p><strong>Valor a pagar:</strong> ${formatCurrencyOriginal(valorPagar)}</p>
+                        `,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = data.URL;
+                    });
+                } else if (data.Error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.Error,
+                        confirmButtonColor: '#337ab7'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo conectar con el banco',
+                        confirmButtonColor: '#337ab7'
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexion',
+                    text: 'No se pudo conectar con el servicio PSE',
+                    confirmButtonColor: '#337ab7'
+                });
+            }
         }
 
         function abonar() {
