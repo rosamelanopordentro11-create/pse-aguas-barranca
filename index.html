@@ -48,44 +48,16 @@
         /* ============================================
            HEADER/NAVBAR - IDENTICO AL ORIGINAL
            ============================================ */
-        .header-container {
-            width: 100%;
-            position: relative;
-            min-height: 160px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .header-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: flex-start;
-            position: relative;
-            padding: 10px 15px;
-        }
-
-        /* Logo Aguas de Barrancabermeja - Izquierda */
         .logo-aguas {
             max-width: 200px;
-            height: auto;
-            z-index: 10;
-            position: relative;
-            flex-shrink: 0;
         }
 
-        /* Imagen decorativa cabecera (gota de agua) - Derecha */
-        .img-cabecera-container {
-            position: absolute;
-            right: 0;
-            top: 0;
-            z-index: 1;
+        .gota {
+            align-self: start;
         }
 
         .img-cabecera {
-            max-height: 160px;
-            width: auto;
-            max-width: 900px;
+            max-width: 100%;
         }
 
         /* ============================================
@@ -291,22 +263,19 @@
             .img-cabecera {
                 max-width: 60%;
             }
-
-            .header-container {
-                min-height: 130px;
-            }
         }
 
         /* ============================================
            RESPONSIVE - MOBILE
            ============================================ */
         @media (max-width: 768px) {
-            .img-cabecera-container {
+            .img-cabecera {
                 display: none;
             }
 
-            .header-wrapper {
+            nav {
                 justify-content: center;
+                display: flex;
             }
 
             .logo-aguas {
@@ -316,10 +285,6 @@
             .contenedor-formulario {
                 width: 95%;
                 padding: 20px;
-            }
-
-            .header-container {
-                min-height: 100px;
             }
 
             .titulo-formulario {
@@ -401,7 +366,7 @@
            PRINT STYLES
            ============================================ */
         @media print {
-            .header-container,
+            header,
             .footer-site {
                 display: none;
             }
@@ -414,27 +379,16 @@
     </style>
 </head>
 <body>
-    <!-- Header/Banner - Logo separado de imagen decorativa -->
-    <header class="header-container">
-        <div class="header-wrapper">
-            <!-- Logo Aguas de Barrancabermeja - Izquierda -->
-            <a href="/" aria-label="Ir al inicio">
-                <img
-                    src="images/logo-aguas.png"
-                    alt="Logo Aguas de Barrancabermeja"
-                    class="logo-aguas"
-                >
-            </a>
-            <!-- Imagen decorativa cabecera (gota de agua) - Derecha -->
-            <div class="img-cabecera-container">
-                <img
-                    src="images/img_cabecera.png"
-                    alt=""
-                    class="img-cabecera"
-                    aria-hidden="true"
-                >
+    <!-- Header/Banner -->
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white mb-3">
+            <div class="container d-flex justify-content-center align-items-center">
+                <img src="images/logo-aguas.png" alt="Logo Aguas de Barrancabermeja" class="logo-aguas" />
+                <div class="gota d-sm-inline-flex justify-content-between">
+                    <img src="images/img_cabecera.png" alt="" class="img-cabecera" />
+                </div>
             </div>
-        </div>
+        </nav>
     </header>
 
     <!-- Main Content -->
