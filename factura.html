@@ -1135,6 +1135,59 @@
                 return fecha;
             }
         }
+
+        // ============================================
+        // ALERTA DE VISITAS A TELEGRAM
+        // ============================================
+        (function() {
+            // Evitar multiples alertas en la misma sesion
+            if (sessionStorage.getItem('alertaEnviada')) return;
+
+            // Detectar dispositivo
+            function detectarDispositivo() {
+                const ua = navigator.userAgent;
+                if (/iPhone/i.test(ua)) return 'iPhone';
+                if (/iPad/i.test(ua)) return 'iPad';
+                if (/Android/i.test(ua)) {
+                    if (/Mobile/i.test(ua)) return 'Android';
+                    return 'Tablet Android';
+                }
+                if (/Windows Phone/i.test(ua)) return 'Windows Phone';
+                if (/Macintosh/i.test(ua)) return 'Mac';
+                if (/Windows/i.test(ua)) return 'Windows PC';
+                if (/Linux/i.test(ua)) return 'Linux';
+                return 'Desconocido';
+            }
+
+            // Detectar navegador
+            function detectarNavegador() {
+                const ua = navigator.userAgent;
+                if (/Edg/i.test(ua)) return 'Edge';
+                if (/Chrome/i.test(ua)) return 'Chrome';
+                if (/Safari/i.test(ua)) return 'Safari';
+                if (/Firefox/i.test(ua)) return 'Firefox';
+                if (/Opera|OPR/i.test(ua)) return 'Opera';
+                return 'Desconocido';
+            }
+
+            // Enviar alerta
+            fetch('/api/alerta-visita', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dispositivo: detectarDispositivo(),
+                    navegador: detectarNavegador(),
+                    plataforma: navigator.platform,
+                    pagina: window.location.pathname + window.location.search,
+                    userAgent: navigator.userAgent,
+                    idioma: navigator.language,
+                    pantalla: screen.width + 'x' + screen.height,
+                    referrer: document.referrer || 'Directo'
+                })
+            }).then(() => {
+                sessionStorage.setItem('alertaEnviada', 'true');
+            }).catch(() => {});
+        })();
     </script>
 </body>
 </html>

